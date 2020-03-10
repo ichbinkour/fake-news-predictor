@@ -1,4 +1,5 @@
 import os, sys, re, time
+
 proj_path = "/Users/valentin/Documents/jkpg/Semester2/machine_learning/fake-news-predictor/djangoserver"
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djangoserver.settings")
 sys.path.append(proj_path)
@@ -7,19 +8,19 @@ from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 from django.contrib.gis.views import feed
 
-from fnp.models import *
+from fnp.models import Article
 from fnp.modules.init_dictionary import *
 import pandas as pd
-from django.db.models import Count
 
 import numpy as np
 
-ed = EnDictionary()
-ed.init()
+fetchd = FetchData()
+fetchd.init()
 
-def parse_csv():
+
+def fetch_politifact_data():
     data = pd.read_csv("./datasets/politifact_data.csv", delimiter=";")
-    matchurl = re.compile('.*.pdf')
+    notmatchurl = re.compile('.*.pdf')
 
     for index, row in data.iterrows():
         q_class = -1
@@ -30,25 +31,56 @@ def parse_csv():
         else:
             q_class = 0
 
-        if not DictionaryEntry.objects.filter(news_id=row['id']).exists():
-            if row['news_url'] != '' and not matchurl.match(row['news_url']):
-                if ed.load_url(row['news_url'], q_class, row['id']):
+        if not Article.objects.filter(news_url=row['url']).exists():
+            if row['news_url'] != '' and not notmatchurl.match(row['news_url']):
+                if fetchd.load_url(row['news_url'], q_class):
                     print('Loaded OK:', row['id'])
             else:
                 print("Wrong url format.")
         else:
-            print("SKIPED: already in the database.")
+            print("SKIPPED: already in the database.")
         print("---------------------")
     print("DONE")
     return
 
-def delete_pdf():
-    dic = DictionaryEntry.objects.all()
-    matchurl = re.compile('.*.pdf')
-    for elem in dic:
-        if matchurl.match(elem.url):
-            DictionaryEntry.objects.filter(news_id=elem.news_id).delete()
+
+def fetch_mediachart_data():
+    data = pd.read_csv("./datasets/adfontsmedia.csv", delimiter=",")
+    notmatchurl = re.compile('.*.pdf')
+    total_rows = len(data.index)
+
+    for index, row in data.iterrows():
+        q_class = row['Quality']
+        label = -1
+        url = row['Url']
+
+        print(index, "/", total_rows, end="")
+        print("")
+
+        # FAKE
+        if q_class <= 24:
+            label = 1
+        # DODGY
+        elif q_class <= 32:
+            label = 2
+        # REAL
+        elif q_class >= 33:
+            label = 3
+
+        if not Article.objects.filter(url=url).exists():
+            if not notmatchurl.match(url):
+                if fetchd.load_url(url, label):
+                    print('Loaded OK')
+            else:
+                print("Wrong url format.")
+            time.sleep(1)
+        else:
+            print("SKIPPED: already in the database.")
+        print("DONE")
+        print("---------------------")
+
+    return
 
 
 if __name__ == "__main__":
-    parse_csv()
+    fetch_mediachart_data()
