@@ -18,29 +18,47 @@ fetchd = FetchData()
 fetchd.init()
 
 
+def loadArticle():
+    print("Getting article list...")
+    article = Article.objects.all()
+    cDict = {}
+
+    for elem in article:
+        cDict[elem.url] = elem.pk
+
+    return cDict
+
+
 def fetch_politifact_data():
+    print("Reading dataset...")
     data = pd.read_csv("./datasets/politifact_data.csv", delimiter=";")
     notmatchurl = re.compile('.*.pdf')
+    total_rows = len(data.index)
+
+    article = loadArticle()
 
     for index, row in data.iterrows():
-        q_class = -1
-
         print('Attempting:', row['id'])
+        url = row['news_url']
+        print(index+1, "/", total_rows, end="")
+        print("")
+
+        q_class = -1
         if row['label'] == "FAKE":
             q_class = 1
         else:
-            q_class = 0
+            q_class = 3
 
-        if not Article.objects.filter(news_url=row['url']).exists():
-            if row['news_url'] != '' and not notmatchurl.match(row['news_url']):
-                if fetchd.load_url(row['news_url'], q_class):
-                    print('Loaded OK:', row['id'])
-            else:
-                print("Wrong url format.")
+        if url in article:
+            print("SKIPPED", row['id'])
         else:
-            print("SKIPPED: already in the database.")
-        print("---------------------")
-    print("DONE")
+            if url != '' and not notmatchurl.match(url):
+                if fetchd.load_url(url, q_class):
+                    print('Loaded OK:', row['id'])
+                else:
+                    print("Wrong url format.")
+                time.sleep(1)
+        print("---------")
     return
 
 
@@ -83,4 +101,4 @@ def fetch_mediachart_data():
 
 
 if __name__ == "__main__":
-    fetch_mediachart_data()
+    fetch_politifact_data()

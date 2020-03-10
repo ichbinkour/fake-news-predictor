@@ -46,7 +46,7 @@ def buildExampleRow(body_text, cDict):
         if word in cDict.keys():
             one_ex_vector[cDict[word] - 1] = 1
         else:
-           print("This word does not exist in dictionary:", word)
+            print("This word does not exist in dictionary:", word)
     return one_ex_vector
 
 
@@ -66,3 +66,7 @@ def buildDict():
                 wd = WordDictionary(word=word)
                 wd.save()
                 cDict[word] = wd.pk
+
+
+if __name__ == '__main__':
+    buildDict()

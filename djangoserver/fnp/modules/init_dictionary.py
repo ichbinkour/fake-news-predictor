@@ -105,6 +105,7 @@ class FetchData():
                 self.extractedText = self.extractedText + reformatted + " "
 
         try:
+            print(self.url)
             de = Article(body_text=self.extractedText, label=q_class, url=self.url)
             de.save()
         except:

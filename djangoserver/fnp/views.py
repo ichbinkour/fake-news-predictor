@@ -48,11 +48,12 @@ class Result(View):
                         print("ERROR while saving database")
                 except:
                     print("ERROR WHILE FETCHING")
+                    return render(request, "index/index.html", {'error': "Error on HTTP request"})
             else:
                 print("Already exist")
                 analyzed = AnalizedArticle.objects.filter(url=url)
                 args = {'form': form, 'url': url, 'data': analyzed}
-                render(request, self.template_name, args)
+                return render(request, self.template_name, args)
 
         args = {'form': form, 'url': url, 'data': analyzed}
         return render(request, self.template_name, args)
